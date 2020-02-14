@@ -54,20 +54,20 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GroupLDAPStorageMapper extends org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper
+public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper
         implements CommonLDAPGroupMapper {
 
-    private static final Logger logger = Logger.getLogger(GroupLDAPStorageMapper.class);
+    private static final Logger logger = Logger.getLogger(GroupExportLDAPStorageMapper.class);
 
-    private final GroupMapperConfig config;
-    private final GroupLDAPStorageMapperFactory factory;
+    private final GroupExportMapperConfig config;
+    private final GroupExportLDAPStorageMapperFactory factory;
 
     // Flag to avoid syncing multiple times per transaction
     private boolean syncFromLDAPPerformedInThisTransaction = false;
 
-    public GroupLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, GroupLDAPStorageMapperFactory factory) {
+    public GroupExportLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, GroupExportLDAPStorageMapperFactory factory) {
         super(mapperModel, ldapProvider, null);
-        this.config = new GroupMapperConfig(mapperModel);
+        this.config = new GroupExportMapperConfig(mapperModel);
         this.factory = factory;
     }
 

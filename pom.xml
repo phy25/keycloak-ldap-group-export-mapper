@@ -22,11 +22,6 @@
 		  <artifactId>keycloak-core</artifactId>
 		  <scope>provided</scope>
 	  </dependency>
-	  <dependency>
-		  <groupId>org.keycloak</groupId>
-		  <artifactId>keycloak-ldap-federation</artifactId>
-		  <scope>provided</scope>
-	  </dependency>
 	    <dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-server-spi</artifactId>
@@ -37,6 +32,11 @@
 			<artifactId>keycloak-server-spi-private</artifactId>
 			<scope>provided</scope>
 		</dependency>
+	  <dependency>
+		  <groupId>org.keycloak</groupId>
+		  <artifactId>keycloak-ldap-federation</artifactId>
+		  <scope>provided</scope>
+	  </dependency>
 		<dependency>
 			<groupId>org.jboss.logging</groupId>
 			<artifactId>jboss-logging</artifactId>

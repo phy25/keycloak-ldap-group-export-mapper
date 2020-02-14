@@ -1,1 +1,1 @@
-com.phy25.keycloak.ldapMapper.GroupLDAPStorageMapperFactory
+com.phy25.keycloak.ldapMapper.GroupExportLDAPStorageMapperFactory

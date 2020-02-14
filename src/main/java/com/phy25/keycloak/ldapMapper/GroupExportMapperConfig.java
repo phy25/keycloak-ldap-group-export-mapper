@@ -22,6 +22,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 
 import java.util.Collection;
@@ -30,7 +31,7 @@ import java.util.Collections;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
+public class GroupExportMapperConfig extends CommonLDAPGroupMapperConfig {
 
     // LDAP DN where are groups of this tree saved.
     public static final String GROUPS_DN = "groups.dn";
@@ -64,7 +65,7 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
     public static final String GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE = "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE";
     public static final String LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY = "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY";
 
-    public GroupMapperConfig(ComponentModel mapperModel) {
+    public GroupExportMapperConfig(ComponentModel mapperModel) {
         super(mapperModel);
     }
 

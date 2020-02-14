@@ -30,7 +30,6 @@ import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
@@ -46,7 +45,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
+public class GroupExportLDAPStorageMapperFactory extends org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = "group-ldap-export-mapper";
 
@@ -59,9 +58,9 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
 
     // TODO: Merge with RoleLDAPFederationMapperFactory as there are lot of similar properties
     static {
-        userGroupsStrategies.put(GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE, new UserRolesRetrieveStrategy.LoadRolesByMember());
-        userGroupsStrategies.put(GroupMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE, new UserRolesRetrieveStrategy.GetRolesFromUserMemberOfAttribute());
-        userGroupsStrategies.put(GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY, new UserRolesRetrieveStrategy.LoadRolesByMemberRecursively());
+        userGroupsStrategies.put(GroupExportMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE, new UserRolesRetrieveStrategy.LoadRolesByMember());
+        userGroupsStrategies.put(GroupExportMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE, new UserRolesRetrieveStrategy.GetRolesFromUserMemberOfAttribute());
+        userGroupsStrategies.put(GroupExportMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY, new UserRolesRetrieveStrategy.LoadRolesByMemberRecursively());
         for (MembershipType membershipType : MembershipType.values()) {
             MEMBERSHIP_TYPES.add(membershipType.toString());
         }
@@ -90,44 +89,44 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         }
 
         ProviderConfigurationBuilder config = ProviderConfigurationBuilder.create()
-                .property().name(GroupMapperConfig.GROUPS_DN)
+                .property().name(GroupExportMapperConfig.GROUPS_DN)
                 .label("LDAP Groups DN")
                 .helpText("LDAP DN where are groups of this tree saved. For example 'ou=groups,dc=example,dc=org' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
-                .property().name(GroupMapperConfig.GROUP_NAME_LDAP_ATTRIBUTE)
+                .property().name(GroupExportMapperConfig.GROUP_NAME_LDAP_ATTRIBUTE)
                 .label("Group Name LDAP Attribute")
                 .helpText("Name of LDAP attribute, which is used in group objects for name and RDN of group. Usually it will be 'cn' . In this case typical group/role object may have DN like 'cn=Group1,ou=groups,dc=example,dc=org' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(LDAPConstants.CN)
                 .add()
-                .property().name(GroupMapperConfig.GROUP_OBJECT_CLASSES)
+                .property().name(GroupExportMapperConfig.GROUP_OBJECT_CLASSES)
                 .label("Group Object Classes")
                 .helpText("Object class (or classes) of the group object. It's divided by comma if more classes needed. In typical LDAP deployment it could be 'groupOfNames' . In Active Directory it's usually 'group' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(roleObjectClasses)
                 .add()
-                .property().name(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE)
+                .property().name(GroupExportMapperConfig.PRESERVE_GROUP_INHERITANCE)
                 .label("Preserve Group Inheritance")
                 .helpText("Flag whether group inheritance from LDAP should be propagated to Keycloak. If false, then all LDAP groups will be mapped as flat top-level groups in Keycloak. Otherwise group inheritance is " +
                         "preserved into Keycloak, but the group sync might fail if LDAP structure contains recursions or multiple parent groups per child groups")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
-                .property().name(GroupMapperConfig.IGNORE_MISSING_GROUPS)
+                .property().name(GroupExportMapperConfig.IGNORE_MISSING_GROUPS)
                 .label("Ignore Missing Groups")
                 .helpText("Ignore missing groups in the group hierarchy")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
-                .property().name(GroupMapperConfig.MEMBERSHIP_LDAP_ATTRIBUTE)
+                .property().name(GroupExportMapperConfig.MEMBERSHIP_LDAP_ATTRIBUTE)
                 .label("Membership LDAP Attribute")
                 .helpText("Name of LDAP attribute on group, which is used for membership mappings. Usually it will be 'member' ." +
                         "However when 'Membership Attribute Type' is 'UID' then 'Membership LDAP Attribute' could be typically 'memberUid' .")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(LDAPConstants.MEMBER)
                 .add()
-                .property().name(GroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE)
+                .property().name(GroupExportMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE)
                 .label("Membership Attribute Type")
                 .helpText("DN means that LDAP group has it's members declared in form of their full DN. For example 'member: uid=john,ou=users,dc=example,dc=com' . " +
                         "UID means that LDAP group has it's members declared in form of pure user uids. For example 'memberUid: john' .")
@@ -143,13 +142,13 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(membershipUserAttribute)
                 .add()
-                .property().name(GroupMapperConfig.GROUPS_LDAP_FILTER)
+                .property().name(GroupExportMapperConfig.GROUPS_LDAP_FILTER)
                 .label("LDAP Filter")
                 .helpText("LDAP Filter adds additional custom filter to the whole query for retrieve LDAP groups. Leave this empty if no additional filtering is needed and you want to retrieve all groups from LDAP. Otherwise make sure that filter starts with '(' and ends with ')'")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         if (importEnabled) {
-            config.property().name(GroupMapperConfig.MODE)
+            config.property().name(GroupExportMapperConfig.MODE)
                     .label("Mode")
                     .helpText("LDAP_ONLY means that all group mappings of users are retrieved from LDAP and saved into LDAP. READ_ONLY is Read-only LDAP mode where group mappings are " +
                             "retrieved from both LDAP and DB and merged together. New group joins are not saved to LDAP but to DB. IMPORT is Read-only LDAP mode where group mappings are " +
@@ -159,14 +158,14 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                     .options(MODES)
                     .defaultValue(mode)
                     .add();
-            config.property().name(GroupMapperConfig.EXPORT_IF_ON_IMPORT)
+            config.property().name(GroupExportMapperConfig.EXPORT_IF_ON_IMPORT)
                     .label("Export if on import")
                     .helpText("Export group changes to LDAP as well, if IMPORT is chosen.")
                     .type(ProviderConfigProperty.BOOLEAN_TYPE)
                     .defaultValue("false")
                     .add();
         } else {
-            config.property().name(GroupMapperConfig.MODE)
+            config.property().name(GroupExportMapperConfig.MODE)
                     .label("Mode")
                     .helpText("LDAP_ONLY means that specified group mappings are writable to LDAP. "
                             + "READ_ONLY means that group mappings are not writable to LDAP.")
@@ -176,16 +175,16 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                     .add();
 
         }
-        config.property().name(GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY)
+        config.property().name(GroupExportMapperConfig.USER_ROLES_RETRIEVE_STRATEGY)
                 .label("User Groups Retrieve Strategy")
                 .helpText("Specify how to retrieve groups of user. LOAD_GROUPS_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all groups where 'member' is our user. " +
                         "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE means that groups of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . " +
                         "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that groups of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(ROLE_RETRIEVERS)
-                .defaultValue(GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE)
+                .defaultValue(GroupExportMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE)
                 .add()
-                .property().name(GroupMapperConfig.MEMBEROF_LDAP_ATTRIBUTE)
+                .property().name(GroupExportMapperConfig.MEMBEROF_LDAP_ATTRIBUTE)
                 .label("Member-Of LDAP Attribute")
                 .helpText("Used just when 'User Roles Retrieve Strategy' is GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE . " +
                         "It specifies the name of the LDAP attribute on the LDAP user, which contains the groups, which the user is member of. " +
@@ -193,13 +192,13 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(LDAPConstants.MEMBER_OF)
                 .add()
-                .property().name(GroupMapperConfig.MAPPED_GROUP_ATTRIBUTES)
+                .property().name(GroupExportMapperConfig.MAPPED_GROUP_ATTRIBUTES)
                 .label("Mapped Group Attributes")
                 .helpText("List of names of attributes divided by comma. This points to the list of attributes on LDAP group, which will be mapped as attributes of Group in Keycloak. " +
                         "Leave this empty if no additional group attributes are required to be mapped in Keycloak. ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
-                .property().name(GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC)
+                .property().name(GroupExportMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC)
                 .label("Drop non-existing groups during sync")
                 .helpText("If this flag is true, then during sync of groups from LDAP to Keycloak, we will keep just those Keycloak groups, which still exists in LDAP. Rest will be deleted")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
@@ -239,7 +238,7 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
     public void onParentUpdate(RealmModel realm, UserStorageProviderModel oldParent, UserStorageProviderModel newParent, ComponentModel mapperModel) {
         if (!newParent.isImportEnabled()) {
             if (new RoleMapperConfig(mapperModel).getMode() == LDAPGroupMapperMode.IMPORT) {
-                mapperModel.getConfig().putSingle(GroupMapperConfig.MODE, LDAPGroupMapperMode.READ_ONLY.toString());
+                mapperModel.getConfig().putSingle(GroupExportMapperConfig.MODE, LDAPGroupMapperMode.READ_ONLY.toString());
                 realm.updateComponent(mapperModel);
 
             }
@@ -268,22 +267,22 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
-        checkMandatoryConfigAttribute(GroupMapperConfig.GROUPS_DN, "LDAP Groups DN", config);
-        checkMandatoryConfigAttribute(GroupMapperConfig.MODE, "Mode", config);
+        checkMandatoryConfigAttribute(GroupExportMapperConfig.GROUPS_DN, "LDAP Groups DN", config);
+        checkMandatoryConfigAttribute(GroupExportMapperConfig.MODE, "Mode", config);
 
         String mt = config.getConfig().getFirst(CommonLDAPGroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE);
         MembershipType membershipType = mt==null ? MembershipType.DN : Enum.valueOf(MembershipType.class, mt);
-        boolean preserveGroupInheritance = Boolean.parseBoolean(config.getConfig().getFirst(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE));
+        boolean preserveGroupInheritance = Boolean.parseBoolean(config.getConfig().getFirst(GroupExportMapperConfig.PRESERVE_GROUP_INHERITANCE));
         if (preserveGroupInheritance && membershipType != MembershipType.DN) {
             throw new ComponentValidationException("ldapErrorCantPreserveGroupInheritanceWithUIDMembershipType");
         }
 
-        LDAPUtils.validateCustomLdapFilter(config.getConfig().getFirst(GroupMapperConfig.GROUPS_LDAP_FILTER));
+        LDAPUtils.validateCustomLdapFilter(config.getConfig().getFirst(GroupExportMapperConfig.GROUPS_LDAP_FILTER));
     }
 
     @Override
     protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
-        return new GroupLDAPStorageMapper(mapperModel, federationProvider, this);
+        return new GroupExportLDAPStorageMapper(mapperModel, federationProvider, this);
     }
 
     protected UserRolesRetrieveStrategy getUserGroupsRetrieveStrategy(String strategyKey) {
