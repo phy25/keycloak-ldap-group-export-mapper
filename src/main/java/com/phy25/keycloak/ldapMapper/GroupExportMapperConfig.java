@@ -24,6 +24,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
+import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -127,5 +128,10 @@ public class GroupExportMapperConfig extends CommonLDAPGroupMapperConfig {
     public String getUserGroupsRetrieveStrategy() {
         String strategyString = mapperModel.getConfig().getFirst(USER_ROLES_RETRIEVE_STRATEGY);
         return strategyString!=null ? strategyString : LOAD_GROUPS_BY_MEMBER_ATTRIBUTE;
+    }
+
+    public boolean isExportModeOn() {
+        return getMode() == LDAPGroupMapperMode.IMPORT
+                && AbstractLDAPStorageMapper.parseBooleanParameter(mapperModel, EXPORT_IF_ON_IMPORT);
     }
 }

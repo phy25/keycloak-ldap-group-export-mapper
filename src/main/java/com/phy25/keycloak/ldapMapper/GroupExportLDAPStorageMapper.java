@@ -438,7 +438,7 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
 
         };
 
-        if (config.getMode() != LDAPGroupMapperMode.LDAP_ONLY) {
+        if (config.getMode() != LDAPGroupMapperMode.LDAP_ONLY && !config.isExportModeOn()) {
             logger.warnf("Ignored sync for federation mapper '%s' as it's mode is '%s'", mapperModel.getName(), config.getMode().toString());
             return syncResult;
         }
@@ -648,7 +648,7 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
         final LDAPGroupMapperMode mode = config.getMode();
 
         // For IMPORT mode, all operations are performed against local DB
-        if (mode == LDAPGroupMapperMode.IMPORT) {
+        if (mode == LDAPGroupMapperMode.IMPORT && !config.isExportModeOn()) {
             return delegate;
         } else {
             return new LDAPGroupMappingsUserDelegate(realm, delegate, ldapUser);
@@ -722,11 +722,12 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
 
         @Override
         public void joinGroup(GroupModel group) {
-            if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
+            if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY || config.isExportModeOn()) {
                 // We need to create new role mappings in LDAP
                 cachedLDAPGroupMappings = null;
                 addGroupMappingInLDAP(realm, group, ldapUser);
-            } else {
+            }
+            if (config.getMode() != LDAPGroupMapperMode.LDAP_ONLY) {
                 super.joinGroup(group);
             }
         }
@@ -744,13 +745,23 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
                 ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
                 LDAPObject ldapGroup = ldapQuery.getFirstResult();
 
+                if (config.isExportModeOn()) {
+                    super.leaveGroup(group);
+                }
+
                 if (ldapGroup == null) {
-                    // Group mapping doesn't exist in LDAP. For LDAP_ONLY mode, we don't need to do anything. For READ_ONLY, delete it in local DB.
+                    // Group mapping doesn't exist in LDAP.
+                    // For LDAP_ONLY mode, we don't need to do anything.
+                    // For IMPORT_EXPORT, delete it in local DB.
+                    // For READ_ONLY, delete it in local DB.
                     if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
                         super.leaveGroup(group);
                     }
                 } else {
-                    // Group mappings exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
+                    // Group mappings exists in LDAP.
+                    // For LDAP_ONLY mode, we can just delete it in LDAP.
+                    // FOr IMPORT_EXPORT, we can delete it in LDAP as well.
+                    // For READ_ONLY we can't delete it -> throw error
                     if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
                         throw new ModelException("Not possible to delete LDAP group mappings as mapper mode is READ_ONLY");
                     } else {
@@ -771,6 +782,11 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
         protected Set<GroupModel> getLDAPGroupMappingsConverted() {
             if (cachedLDAPGroupMappings != null) {
                 return new HashSet<>(cachedLDAPGroupMappings);
+            }
+
+            if (config.isExportModeOn()) {
+                cachedLDAPGroupMappings = null;
+                return new HashSet<>();
             }
 
             List<LDAPObject> ldapGroups = getLDAPGroupMappings(ldapUser);
