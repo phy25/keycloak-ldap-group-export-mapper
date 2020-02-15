@@ -578,6 +578,10 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
 
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel kcGroup, int firstResult, int maxResults) {
+        if (config.getMode() == LDAPGroupMapperMode.IMPORT) {
+            return Collections.emptyList();
+        }
+
         // TODO: with ranged search in AD we can improve the search using the specific range (not done for the moment)
         LDAPObject ldapGroup = loadLDAPGroupByName(kcGroup.getName());
         if (ldapGroup == null) {
@@ -715,8 +719,12 @@ public class GroupExportLDAPStorageMapper extends org.keycloak.storage.ldap.mapp
             } else {
                 // Merge mappings from both DB and LDAP
                 Set<GroupModel> modelGroupMappings = super.getGroups();
-                ldapGroupMappings.addAll(modelGroupMappings);
-                return ldapGroupMappings;
+                if (config.getMode() == LDAPGroupMapperMode.IMPORT){
+                    return modelGroupMappings;
+                }else {
+                    ldapGroupMappings.addAll(modelGroupMappings);
+                    return ldapGroupMappings;
+                }
             }
         }
 
